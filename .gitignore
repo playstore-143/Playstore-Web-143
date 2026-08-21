@@ -1,0 +1,9 @@
+node_modules/
+.venv/
+.env
+.env.*
+!.env.example
+.vercel/
+uploads/
+__pycache__/
+.vercel

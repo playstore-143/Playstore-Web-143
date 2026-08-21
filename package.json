@@ -1,0 +1,14 @@
+{
+  "name": "appspace-telegram-publisher",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/blob": "latest"
+  },
+  "devDependencies": {
+    "vercel": "latest"
+  }
+}

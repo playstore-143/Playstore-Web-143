@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Mobile Banking & Financial Services - Apps on Google Play</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .app-logo img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            border-radius: 22%;
+        }
+
+        .install-button {
+            width: 100%;
+            height: 44px;
+            border-radius: 22px;
+            background: #01875f;
+        }
+
+        .hero-action {
+            min-width: 170px;
+        }
+
+        @media (max-width: 800px) {
+            .hero-action {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .install-button {
+                height: 44px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Google Play Header Bar -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="#top" aria-label="Appspace home">
+                <span class="brand-mark" title="Google Play">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4.5 3.5L16.2 11.7L4.5 19.9V3.5Z" fill="#00e676" />
+                        <path d="M16.2 11.7L19.5 9.8C20.3 9.4 20.3 8.3 19.5 7.8L4.5 3.5L16.2 11.7Z" fill="#ffeb3b" />
+                        <path d="M4.5 19.9L19.5 15.6C20.3 15.2 20.3 14.1 19.5 13.6L16.2 11.7L4.5 19.9Z"
+                            fill="#ff2a6d" />
+                        <path d="M16.2 11.7L4.5 3.5V19.9L16.2 11.7Z" fill="#29b6f6" />
+                    </svg>
+                </span>
+                <span>google play</span>
+            </a>
+
+            <label class="search-box">
+                <span class="search-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                </span>
+                <input type="search" id="searchInput" placeholder="Search for apps & games"
+                    aria-label="Search for apps and games" />
+                <kbd>⌘ K</kbd>
+            </label>
+
+            <nav class="top-actions" aria-label="Account actions">
+                <button class="icon-button" aria-label="Help" title="Help & Feedback">?</button>
+                <button class="avatar" aria-label="Profile" title="Google Account">VS</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Page Shell Main Container -->
+    <main id="top" class="page-shell">
+        <!-- Category Breadcrumbs -->
+        <div class="breadcrumbs" aria-label="Breadcrumbs">
+            <a href="#apps">Apps</a> <span>›</span>
+            <a href="#finance">Finance & Banking</a> <span>›</span>
+            <span>Mobile Banking</span>
+        </div>
+
+        <!-- App Hero Section -->
+        <section class="app-hero">
+            <div class="app-logo">
+                <img id="appLogo"
+                    src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%230a2540'/><stop offset='50%25' stop-color='%230052cc'/><stop offset='100%25' stop-color='%230065ff'/></linearGradient><linearGradient id='gold' x1='0' y1='0' x2='1' y2='0'><stop offset='0%25' stop-color='%23f6d365'/><stop offset='100%25' stop-color='%23fda085'/></linearGradient></defs><rect width='200' height='200' rx='46' fill='url(%23bg)'/><path d='M100 45 L155 75 L45 75 Z' fill='url(%23gold)'/><rect x='52' y='82' width='16' height='56' rx='4' fill='%23ffffff'/><rect x='84' y='82' width='16' height='56' rx='4' fill='%23ffffff'/><rect x='116' y='82' width='16' height='56' rx='4' fill='%23ffffff'/><rect x='148' y='82' width='16' height='56' rx='4' fill='%23ffffff'/><rect x='42' y='144' width='132' height='16' rx='4' fill='url(%23gold)'/><circle cx='145' cy='145' r='22' fill='%2300d4b6'/><path d='M135 145 L142 152 L156 138' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>"
+                    alt="Banking App Logo" />
+            </div>
+
+            <div class="app-copy">
+                <h1 id="appName">Mobile Banking</h1>
+                <p class="developer" id="appDeveloper">Banking Official <span class="verified"
+                        title="Verified Financial Institution">✓</span></p>
+                <p class="tagline" id="appTagline">Secure Mobile Banking, Instant UPI Transfers & Financial Services</p>
+
+                <div class="hero-meta">
+                    <span>
+                        <strong>4.8 <span class="stars">★★★★★</span></strong>
+                        <small>12K reviews</small>
+                    </span>
+                    <span class="meta-divider"></span>
+                    <span>
+                        <strong>1M+</strong>
+                        <small>Downloads</small>
+                    </span>
+                    <span class="meta-divider"></span>
+                    <span>
+                        <strong>Everyone</strong>
+                        <small>Rated for 3+</small>
+                    </span>
+                    <span class="meta-divider"></span>
+                    <span>
+                        <strong>12 MB</strong>
+                        <small>Size</small>
+                    </span>
+                </div>
+            </div>
+
+            <div class="hero-action">
+                <button class="install-button" id="installButton">
+                    <span class="button-label">Install</span>
+                    <span class="button-spinner"></span>
+                </button>
+                <div class="hero-action-buttons">
+                    <button class="action-chip wishlist-chip" id="wishlistChip" title="Add to wishlist">
+                        <span class="icon">★</span> Add to wishlist
+                    </button>
+                    <button class="action-chip share-chip" id="shareChip" title="Share app">
+                        <span class="icon">➦</span> Share
+                    </button>
+                </div>
+                <p class="availability">Available on all your devices</p>
+            </div>
+        </section>
+
+        <!-- Toast Notification Banner -->
+        <div class="notice" id="notice" role="status" aria-live="polite">
+            <span class="notice-icon">✓</span>
+            <span id="noticeText">App added to your wishlist.</span>
+            <button id="dismissNotice" aria-label="Dismiss notification">×</button>
+        </div>
+
+        <!-- Main Content Grid -->
+        <section class="content-grid">
+            <div class="main-column">
+
+                <!-- Banking Screenshots Preview Section -->
+                <section class="section-block screenshots-section">
+                    <div class="section-heading">
+                        <h2>App preview</h2>
+                        <div class="carousel-nav">
+                            <button class="round-arrow shot-prev" id="shotPrev"
+                                aria-label="Previous screenshot">‹</button>
+                            <button class="round-arrow shot-next" id="shotNext" aria-label="Next screenshot">›</button>
+                        </div>
+                    </div>
+
+                    <div class="screenshots" id="screenshotsList">
+                        <!-- Shot 1: Account Balance & Quick Transfers -->
+                        <div class="shot shot-one">
+                            <div class="shot-top">
+                                <b>💳 Banking Portal</b>
+                            </div>
+                            <div class="shot-title">Account & Balance</div>
+                            <div class="bank-balance-card">
+                                <small>Available Balance</small>
+                                <div class="balance-num">₹4850.00</div>
+                                <span class="acc-num">Savings A/c •••• 4829</span>
+                            </div>
+                            <div class="quick-bank-actions">
+                                <span class="bank-act-btn">⚡ UPI</span>
+                                <span class="bank-act-btn">↗ Send</span>
+                                <span class="bank-act-btn">📄 Bills</span>
+                            </div>
+                            <div class="task-card bank-tx">
+                                <div class="check checked">✓</div>
+                                <span>Salary Credit Received</span>
+                                <em>+₹75,000</em>
+                            </div>
+                            <div class="task-card bank-tx">
+                                <div class="check checked">✓</div>
+                                <span>Merchant UPI Payment</span>
+                                <em>-₹2,490</em>
+                            </div>
+                            <div class="progress-line"><span style="width: 82%;"></span></div>
+                        </div>
+
+                        <!-- Shot 2: Instant Pre-approved Credit & Card Management -->
+                        <div class="shot shot-two">
+                            <div class="shot-top">
+                                <span>CREDIT SERVICES</span>
+                                <b>💎 Pre-Approved</b>
+                            </div>
+                            <div class="bank-credit-box">
+                                <small>Instant Credit Limit</small>
+                                <strong>₹2,50,000</strong>
+                            </div>
+                            <div class="ring bank-card-ring">
+                                <b>VISA</b>
+                                <small>•••• 9812</small>
+                            </div>
+                            <div class="mini-bars">
+                                <i></i><i></i><i></i><i></i><i></i>
+                            </div>
+                            <strong>92% Available Credit Line</strong>
+                        </div>
+
+                        <!-- Shot 3: 256-bit Security & Financial Insights -->
+                        <div class="shot shot-three">
+                            <div class="shot-top">
+                                <span class="note-label">BANK SECURITY</span>
+                                <b>🛡️ 256-Bit SSL</b>
+                            </div>
+                            <strong>Bank-Grade 24/7 Protection</strong>
+                            <p>Instant card lock, biometric login, and real-time transaction alerts for maximum security.</p>
+                            <div class="note-dot bank-sec-dot" title="Account Secured">🔒</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- About this App Section -->
+                <section class="section-block about">
+                    <div class="section-heading">
+                        <h2>About this app</h2>
+                        <button class="round-arrow" aria-label="About this app">→</button>
+                    </div>
+                    <p id="appDescription">Official Mobile Banking app. Experience next-generation mobile banking with lightning-fast money transfers, instant pre-approved credit services, credit card management, and 24/7 account security. Built with 256-bit bank-grade encryption to give you complete, effortless control over your finances safely anytime, anywhere.</p>
+
+                    <div class="tag-chips">
+                        <span class="tag">Mobile Banking</span>
+                        <span class="tag">Instant Transfers</span>
+                        <span class="tag">UPI & Bill Pay</span>
+                        <span class="tag">Credit Cards & Loans</span>
+                        <span class="tag">Secure NetBanking</span>
+                    </div>
+
+                    <a class="learn-more" href="#data-safety">Read details <span>→</span></a>
+                </section>
+
+                <!-- What's New Section -->
+                <section class="section-block">
+                    <div class="section-heading">
+                        <h2>What's new</h2>
+                        <span class="version" id="appVersion">Version 2.4.1</span>
+                    </div>
+                    <p class="update-copy">Upgraded 256-bit SSL encryption security, 1-tap instant UPI transfer speeds, biometric fingerprint/face login authentication, and smart monthly spending analytics.</p>
+                    <div class="update-pills">
+                        <span>✦ 1-Tap Instant UPI Transfers</span>
+                        <span>🛡️ Biometric Login Security</span>
+                        <span>★ Pre-approved Instant Loans</span>
+                    </div>
+                </section>
+
+                <!-- Ratings & Reviews Summary -->
+                <section class="section-block reviews-section">
+                    <div class="section-heading">
+                        <h2>Ratings and reviews</h2>
+                        <button class="round-arrow" aria-label="See all reviews">→</button>
+                    </div>
+
+                    <div class="ratings-container">
+                        <div class="score-card">
+                            <div class="score-num">4.8</div>
+                            <div class="score-stars">★★★★★</div>
+                            <small class="score-count">12,480 total reviews</small>
+                        </div>
+
+                        <div class="rating-bars-list">
+                            <div class="rating-bar-item"><span>5</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: 86%;"></div>
+                                </div>
+                            </div>
+                            <div class="rating-bar-item"><span>4</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: 10%;"></div>
+                                </div>
+                            </div>
+                            <div class="rating-bar-item"><span>3</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: 2%;"></div>
+                                </div>
+                            </div>
+                            <div class="rating-bar-item"><span>2</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: 1%;"></div>
+                                </div>
+                            </div>
+                            <div class="rating-bar-item"><span>1</span>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: 1%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Featured Review Cards -->
+                    <div class="reviews-list">
+                        <div class="review-item">
+                            <div class="review-user">
+                                <div class="user-avatar-circle" style="background: #e8f0fe; color: #1a73e8;">AK</div>
+                                <div class="user-details">
+                                    <strong>Alex Kumar</strong>
+                                    <div class="user-rating-line"><span class="stars-sm">★★★★★</span> <small>August 19, 2025</small></div>
+                                </div>
+                            </div>
+                            <p class="review-text">Hands down the most reliable and fast mobile banking app! Money transfers happen in less than a second, and account management is super smooth.</p>
+                            <div class="review-helpful"><small>52 people found this review helpful</small></div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Sidebar Column -->
+            <aside class="side-column">
+                <section class="info-card">
+                    <div class="info-heading">
+                        <h2>App info</h2>
+                        <span class="more">•••</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">↓</span>
+                        <span><b>1M+ downloads</b><small>Trusted by customers nationwide</small></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">▣</span>
+                        <span><b>4.2 MB</b><small>Small size, ultra fast</small></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">◷</span>
+                        <span><b>Updated recently</b><small>August 18, 2025</small></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">●</span>
+                        <span><b>Verified Financial App</b><small>Compliant & Secure</small></span>
+                    </div>
+                </section>
+
+                <section class="info-card safety-card" id="data-safety">
+                    <div class="info-heading">
+                        <h2>Data safety</h2>
+                        <span class="shield">✓</span>
+                    </div>
+                    <p>Safety starts with understanding how financial institutions protect your data. Developer has provided this security summary.</p>
+
+                    <div class="safety-points">
+                        <div class="safety-point">
+                            <span class="point-icon">🔒</span>
+                            <span>256-bit bank-grade encryption in transit</span>
+                        </div>
+                        <div class="safety-point">
+                            <span class="point-icon">🛡️</span>
+                            <span>Multi-factor biometric authentication</span>
+                        </div>
+                        <div class="safety-point">
+                            <span class="point-icon">🗑️</span>
+                            <span>No unauthorized data sharing</span>
+                        </div>
+                    </div>
+
+                    <a class="learn-more" href="#data-safety">See details <span>→</span></a>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <!-- APK Installation Guide Modal -->
+    <div class="install-modal-overlay" id="installModal" role="dialog" aria-modal="true">
+        <div class="install-modal-card">
+            <div class="modal-header">
+                <span class="modal-icon">📥</span>
+                <h3>Complete App Installation</h3>
+                <button class="modal-close" id="closeInstallModal" aria-label="Close">×</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>APK File Downloaded Successfully!</strong></p>
+                <p>To install the app on your phone, follow these simple steps:</p>
+                <ol class="install-steps">
+                    <li>Open your phone's <b>Notification Bar</b> or <b>Downloads Folder</b>.</li>
+                    <li>Tap on the downloaded <b id="modalApkName">base.apk</b> file.</li>
+                    <li>If prompted, turn on <b>"Allow from this source / Unknown Sources"</b>.</li>
+                    <li>Tap <b>"Install"</b> to complete installation.</li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-primary" id="gotItModalBtn">Got it, open downloads</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <a class="active" href="#top"><span>⌂</span>Home</a>
+        <a href="#apps"><span>▦</span>Apps</a>
+        <a href="#games"><span>◈</span>Games</a>
+        <a href="#books"><span>▤</span>Books</a>
+    </nav>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
