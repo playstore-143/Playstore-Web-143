@@ -191,6 +191,13 @@ def main() -> None:
     if not token or token.startswith("PASTE_"):
         raise SystemExit("TELEGRAM_BOT_TOKEN environment variable set kijiye.")
 
+    # Initialize event loop for Python 3.12+ / 3.14+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
     application = Application.builder().token(token).build()
     conversation = ConversationHandler(
         entry_points=[
@@ -207,13 +214,17 @@ def main() -> None:
             CommandHandler("start", start),
             CallbackQueryHandler(new_link_callback, pattern="^new_link$"),
         ],
+        per_message=False,
+        per_chat=True,
+        per_user=True,
     )
     application.add_handler(conversation)
     application.add_handler(CallbackQueryHandler(new_link_callback, pattern="^new_link$"))
     application.add_error_handler(handle_error)
     logger.info("Telegram app collection bot started")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.run_polling(allowed_updates=Update.ALL_TYPES, close_loop=False)
 
 
 if __name__ == "__main__":
     main()
+
