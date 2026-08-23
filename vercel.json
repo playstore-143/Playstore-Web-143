@@ -1,3 +1,10 @@
 {
-  "rewrites": [{ "source": "/app/:slug", "destination": "/index.html?slug=:slug" }]
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    { "source": "/app/:slug", "destination": "/index.html?slug=:slug" }
+  ]
 }
