@@ -10,10 +10,10 @@ export default async function handler(request, response) {
 		if (blobToken) options.token = blobToken;
 		const blob = await get(key, options);
 		if (!blob) return response.status(404).json({ error: 'File not found' });
-		
+
 		const isApk = key.endsWith('/base.apk');
 		response.setHeader('Content-Type', isApk ? 'application/vnd.android.package-archive' : (blob.contentType || 'image/png'));
-		
+
 		if (isApk) {
 			const projectSlug = key.split('/')[1] || 'app';
 			const apkFileName = `${projectSlug.replace(/[^a-z0-9]/gi, '_')}.apk`;
