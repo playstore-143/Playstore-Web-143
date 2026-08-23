@@ -1,0 +1,7 @@
+requirements.txt
+bot.py
+*.py
+.venv
+__pycache__
+base.apk
+uploads
