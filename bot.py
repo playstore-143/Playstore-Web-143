@@ -20,8 +20,7 @@ from telegram.ext import (
 )
 
 NAME, LOGO, APK = range(3)
-ROOT_DIR = Path(__file__).resolve().parent.parent
-UPLOADS = ROOT_DIR / "uploads"
+UPLOADS = Path("uploads")
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,8 +29,6 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 def load_local_env() -> None:
     env_file = Path(".env.local")
-    if not env_file.exists():
-        env_file = ROOT_DIR / ".env.local"
     if not env_file.exists():
         return
     for line in env_file.read_text(encoding="utf-8").splitlines():
