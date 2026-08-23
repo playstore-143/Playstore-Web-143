@@ -59,7 +59,7 @@ def extract_package_name_from_bytes(data: bytes, fallback_slug: str) -> str:
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
-    await update.message.reply_text("✅ Process started\n\n1/3 App ka naam bhejiye.")
+    await update.message.reply_text("✅ Process started\n\n1/3 App ka naam Bhejiye.")
     return NAME
 
 
@@ -67,13 +67,13 @@ async def new_link_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     query = update.callback_query
     await query.answer()
     context.user_data.clear()
-    await query.message.reply_text("✅ Process restarted\n\n1/3 App ka naam bhejiye.")
+    await query.message.reply_text("✅ Process restarted\n\n1/3 App ka naam Bhejiye.")
     return NAME
 
 
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data["name"] = update.message.text.strip()
-    await update.message.reply_text("✅ 1/3 App name received\n\n2/3 Ab app ka icon image bhejiye.")
+    await update.message.reply_text("✅ 1/3 App name received\n\n2/3 Ab app ka icon image Bhejiye.")
     return LOGO
 
 
@@ -83,16 +83,16 @@ async def get_logo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     elif update.message.document and update.message.document.mime_type and update.message.document.mime_type.startswith("image/"):
         context.user_data["logo_file_id"] = update.message.document.file_id
     else:
-        await update.message.reply_text("Please logo image bhejiye, phir main next step par jaunga.")
+        await update.message.reply_text("Please logo image Bhejiye, phir main next step par jaunga.")
         return LOGO
-    await update.message.reply_text("✅ 2/3 App icon received\n\n3/3 Ab APK document bhejiye. Filename kuch bhi ho sakta hai.")
+    await update.message.reply_text("✅ 2/3 App icon received\n\n3/3 Ab APK document Bhejiye. Filename kuch bhi ho sakta hai.")
     return APK
 
 
 async def get_apk(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     document = update.message.document
     if not document:
-        await update.message.reply_text("APK document ke roop me bhejiye. Process continue karne ke liye /start bhi bhej sakte hain.")
+        await update.message.reply_text("APK document ke roop me Bhejiye. Process continue karne ke liye /start bhi bhej sakte hain.")
         return APK
 
     status = await update.message.reply_text("✅ 3/3 APK received\n⏳ Analyzing APK & preparing your app page...")
@@ -177,7 +177,7 @@ async def get_apk(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
-    await update.message.reply_text("Process cancel ho gaya. Dobara shuru karne ke liye /start bhejiye.")
+    await update.message.reply_text("Process cancel ho gaya. Dobara shuru karne ke liye /start Bhejiye.")
     return ConversationHandler.END
 
 
