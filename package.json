@@ -2,13 +2,13 @@
   "name": "appspace-telegram-publisher",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "vercel dev"
   },
   "dependencies": {
     "@vercel/blob": "latest"
-  },
-  "devDependencies": {
-    "vercel": "latest"
   }
 }
