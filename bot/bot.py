@@ -20,7 +20,8 @@ from telegram.ext import (
 )
 
 NAME, LOGO, APK = range(3)
-UPLOADS = Path("uploads")
+ROOT_DIR = Path(__file__).resolve().parent.parent
+UPLOADS = ROOT_DIR / "uploads"
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,6 +30,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 def load_local_env() -> None:
     env_file = Path(".env.local")
+    if not env_file.exists():
+        env_file = ROOT_DIR / ".env.local"
     if not env_file.exists():
         return
     for line in env_file.read_text(encoding="utf-8").splitlines():
@@ -212,7 +215,6 @@ def main() -> None:
     application.add_handler(CallbackQueryHandler(new_link_callback, pattern="^new_link$"))
     application.add_error_handler(handle_error)
     logger.info("Telegram app collection bot started")
-    asyncio.set_event_loop(asyncio.new_event_loop())
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
