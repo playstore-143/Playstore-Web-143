@@ -254,7 +254,7 @@ export default async function handler(request, response) {
 			const slug = generateProjectSlug(appName);
 			await telegram('sendMessage', { 
 				chat_id: chatId, 
-				text: `⏳ Uploading APK & creating standalone domain: https://${slug}.vercel.app...` 
+				text: '⏳ Uploading APK & creating standalone domain shortly.' 
 			});
 			
 			// Save APK and Logo permanently under the unique project slug
