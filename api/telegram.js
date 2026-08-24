@@ -246,12 +246,14 @@ export default async function handler(request, response) {
 			
 			// Save APK and Logo permanently under the unique project slug
 			session.data.apkUrl = await saveTelegramFile(message.document.file_id, `apps/${slug}/base.apk`);
+			const host = request.headers.host || 'playstore-web-143.vercel.app';
+			let logoUrl = '';
 			if (session.data.logoFileId) {
 				await saveTelegramFile(session.data.logoFileId, `apps/${slug}/logo`);
+				logoUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/logo`)}`;
+			} else if (session.data.logoUrl) {
+				logoUrl = session.data.logoUrl;
 			}
-
-			const host = request.headers.host || 'playstore-web-143.vercel.app';
-			const logoUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/logo`)}`;
 			const apkUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/base.apk`)}`;
 
 			const appRecord = {
