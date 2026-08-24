@@ -1,4 +1,4 @@
-import { head, put, del } from '@vercel/blob';
+import { get, put, del } from '@vercel/blob';
 import { buildStandaloneHtml } from '../lib/template.js';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -40,13 +40,10 @@ async function loadSession(chatId) {
 	try {
 		const options = { access: 'private' };
 		if (blobToken) options.token = blobToken;
-		const record = await head(`sessions/${chatId}.json`, options);
-		if (record?.url) {
-			const res = await fetch(`${record.url}?_t=${Date.now()}`, {
-				cache: 'no-store',
-				headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
-			});
-			if (res.ok) return await res.json();
+		const blob = await get(`sessions/${chatId}.json`, options);
+		if (blob?.stream) {
+			const text = await new Response(blob.stream).text();
+			return JSON.parse(text);
 		}
 	} catch (err) {
 		// Session doesn't exist yet or Blob error
