@@ -65,7 +65,12 @@ async function saveSession(chatId, session) {
 }
 
 function generateProjectSlug(value) {
-	const clean = (value || 'app').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'app';
+	const clean = (value || 'app')
+		.toLowerCase()
+		.trim()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		.slice(0, 20) || 'app';
 	const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
 	const rand = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 	return `${clean}-${rand}`;
