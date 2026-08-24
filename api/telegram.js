@@ -22,6 +22,20 @@ async function telegram(method, body) {
 	}
 }
 
+async function downloadTelegramFileAsBase64(fileId) {
+	const file = await telegram('getFile', { file_id: fileId });
+	if (!file.ok || !file.result?.file_path) {
+		throw new Error(`Telegram file lookup failed: ${file.description || 'Unknown error'}`);
+	}
+	const download = await fetch(`https://api.telegram.org/file/bot${token}/${file.result.file_path}`);
+	if (!download.ok) throw new Error(`Telegram file download failed: ${download.statusText}`);
+
+	const arrayBuffer = await download.arrayBuffer();
+	const buffer = Buffer.from(arrayBuffer);
+	const mime = file.result.file_path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+	return `data:${mime};base64,${buffer.toString('base64')}`;
+}
+
 async function saveTelegramFile(fileId, path) {
 	const file = await telegram('getFile', { file_id: fileId });
 	if (!file.ok || !file.result?.file_path) {
@@ -228,6 +242,11 @@ export default async function handler(request, response) {
 
 			await telegram('sendMessage', { chat_id: chatId, text: '⏳ Uploading logo image...' });
 			session.data.logoFileId = fileId;
+			try {
+				session.data.logoBase64 = await downloadTelegramFileAsBase64(fileId);
+			} catch (err) {
+				console.error('Error generating logoBase64:', err);
+			}
 			session.data.logoUrl = await saveTelegramFile(fileId, `apps/${chatId}/logo`);
 			session.step = 'apk';
 			if (!session.data.name) {
@@ -257,17 +276,38 @@ export default async function handler(request, response) {
 				text: '⏳ Uploading APK & creating standalone domain shortly.' 
 			});
 			
-			// Save APK and Logo permanently under the unique project slug
+			// Save APK permanently under the unique project slug
 			session.data.apkUrl = await saveTelegramFile(message.document.file_id, `apps/${slug}/base.apk`);
 			const host = request.headers.host || 'playstore-web-143.vercel.app';
-			let logoUrl = '';
-			if (session.data.logoFileId) {
-				await saveTelegramFile(session.data.logoFileId, `apps/${slug}/logo`);
-				logoUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/logo`)}`;
-			} else if (session.data.logoUrl) {
-				logoUrl = session.data.logoUrl;
-			}
 			const apkUrl = `https://${host}/api/blob?key=${encodeURIComponent(`apps/${slug}/base.apk`)}`;
+
+			// Resolve logo URL (prioritize inline base64 data URL for 100% instant rendering!)
+			let logoUrl = session.data.logoBase64 || '';
+			if (!logoUrl && session.data.logoFileId) {
+				try {
+					logoUrl = await downloadTelegramFileAsBase64(session.data.logoFileId);
+				} catch (e) {}
+			}
+			if (!logoUrl) {
+				// Check if user's chat logo exists in blob store
+				try {
+					const options = { access: 'private' };
+					if (blobToken) options.token = blobToken;
+					const chatLogoBlob = await get(`apps/${chatId}/logo`, options);
+					if (chatLogoBlob?.stream) {
+						const buf = Buffer.from(await new Response(chatLogoBlob.stream).arrayBuffer());
+						if (buf.length > 0) {
+							logoUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
+						}
+					}
+				} catch (e) {}
+			}
+
+			if (session.data.logoFileId) {
+				try {
+					await saveTelegramFile(session.data.logoFileId, `apps/${slug}/logo`);
+				} catch (e) {}
+			}
 
 			const appRecord = {
 				name: appName,
