@@ -2,8 +2,6 @@ import { head, put, del } from '@vercel/blob';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const blobToken = process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_BLOB_READ_WRITE_TOKEN;
-const vercelToken = process.env.VERCEL_TOKEN;
-const vercelTeamId = process.env.VERCEL_TEAM_ID || 'sanam-infotech';
 
 async function telegram(method, body) {
 	if (!token) {
@@ -243,20 +241,49 @@ function buildStandaloneHtml(app) {
 </html>`;
 }
 
+const vercelToken = process.env.VERCEL_TOKEN;
+let cachedTeamId = process.env.VERCEL_TEAM_ID || 'team_cZIUTShiGmqZiIaDKEQLi8nF';
+
+async function getTeamId() {
+	if (cachedTeamId) return cachedTeamId;
+	if (!vercelToken) return null;
+	try {
+		const res = await fetch('https://api.vercel.com/v2/user', {
+			headers: { Authorization: `Bearer ${vercelToken}` },
+		});
+		if (res.ok) {
+			const data = await res.json();
+			cachedTeamId = data.user?.defaultTeamId || 'team_cZIUTShiGmqZiIaDKEQLi8nF';
+			return cachedTeamId;
+		}
+	} catch (e) {
+		console.error('Could not fetch user team ID:', e);
+	}
+	return 'team_cZIUTShiGmqZiIaDKEQLi8nF';
+}
+
 async function createVercelProject(name) {
-	const endpoint = `https://api.vercel.com/v9/projects?teamId=${encodeURIComponent(vercelTeamId)}`;
+	const teamId = await getTeamId();
+	const endpoint = teamId
+		? `https://api.vercel.com/v9/projects?teamId=${encodeURIComponent(teamId)}`
+		: 'https://api.vercel.com/v9/projects';
 	const result = await fetch(endpoint, {
 		method: 'POST',
 		headers: { Authorization: `Bearer ${vercelToken}`, 'content-type': 'application/json' },
 		body: JSON.stringify({ name }),
 	});
 	if (result.ok || result.status === 409) return name;
-	console.warn('Vercel project creation warning:', result.status);
+	const text = await result.text();
+	console.warn(`Vercel project creation (${result.status}):`, text);
 	return name;
 }
 
 async function deployProject(name, html) {
-	const result = await fetch(`https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(vercelTeamId)}`, {
+	const teamId = await getTeamId();
+	const endpoint = teamId
+		? `https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(teamId)}`
+		: 'https://api.vercel.com/v13/deployments';
+	const result = await fetch(endpoint, {
 		method: 'POST',
 		headers: { Authorization: `Bearer ${vercelToken}`, 'content-type': 'application/json' },
 		body: JSON.stringify({
@@ -274,7 +301,10 @@ async function deployProject(name, html) {
 }
 
 async function waitForDeploymentReady(deploymentId) {
-	const endpoint = `https://api.vercel.com/v13/deployments/${deploymentId}?teamId=${encodeURIComponent(vercelTeamId)}`;
+	const teamId = await getTeamId();
+	const endpoint = teamId
+		? `https://api.vercel.com/v13/deployments/${deploymentId}?teamId=${encodeURIComponent(teamId)}`
+		: `https://api.vercel.com/v13/deployments/${deploymentId}`;
 	const maxRetries = 20;
 	for (let i = 0; i < maxRetries; i++) {
 		const res = await fetch(endpoint, {

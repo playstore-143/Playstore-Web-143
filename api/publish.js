@@ -203,12 +203,33 @@ function buildStandaloneHtml(app) {
 </html>`;
 }
 
+const vercelToken = process.env.VERCEL_TOKEN;
+let cachedTeamId = process.env.VERCEL_TEAM_ID || 'team_cZIUTShiGmqZiIaDKEQLi8nF';
+
+async function getTeamId() {
+    if (cachedTeamId) return cachedTeamId;
+    if (!vercelToken) return null;
+    try {
+        const res = await fetch('https://api.vercel.com/v2/user', {
+            headers: { Authorization: `Bearer ${vercelToken}` },
+        });
+        if (res.ok) {
+            const data = await res.json();
+            cachedTeamId = data.user?.defaultTeamId || 'team_cZIUTShiGmqZiIaDKEQLi8nF';
+            return cachedTeamId;
+        }
+    } catch (e) {}
+    return 'team_cZIUTShiGmqZiIaDKEQLi8nF';
+}
+
 async function createVercelProject(name) {
-    const teamId = process.env.VERCEL_TEAM_ID || 'sanam-infotech';
-    const endpoint = `https://api.vercel.com/v9/projects?teamId=${encodeURIComponent(teamId)}`;
+    const teamId = await getTeamId();
+    const endpoint = teamId
+        ? `https://api.vercel.com/v9/projects?teamId=${encodeURIComponent(teamId)}`
+        : 'https://api.vercel.com/v9/projects';
     const result = await fetch(endpoint, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'content-type': 'application/json' },
+        headers: { Authorization: `Bearer ${vercelToken}`, 'content-type': 'application/json' },
         body: JSON.stringify({ name })
     });
     if (result.ok || result.status === 409) return name;
@@ -219,10 +240,13 @@ async function createVercelProject(name) {
 }
 
 async function deployProject(name, html) {
-    const teamId = process.env.VERCEL_TEAM_ID || 'sanam-infotech';
-    const result = await fetch(`https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(teamId)}`, {
+    const teamId = await getTeamId();
+    const endpoint = teamId
+        ? `https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(teamId)}`
+        : 'https://api.vercel.com/v13/deployments';
+    const result = await fetch(endpoint, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}`, 'content-type': 'application/json' },
+        headers: { Authorization: `Bearer ${vercelToken}`, 'content-type': 'application/json' },
         body: JSON.stringify({
             name,
             project: name,
@@ -235,13 +259,15 @@ async function deployProject(name, html) {
 }
 
 async function waitForDeploymentReady(deploymentId) {
-    const teamId = process.env.VERCEL_TEAM_ID || 'sanam-infotech';
-    const endpoint = `https://api.vercel.com/v13/deployments/${deploymentId}?teamId=${encodeURIComponent(teamId)}`;
+    const teamId = await getTeamId();
+    const endpoint = teamId
+        ? `https://api.vercel.com/v13/deployments/${deploymentId}?teamId=${encodeURIComponent(teamId)}`
+        : `https://api.vercel.com/v13/deployments/${deploymentId}`;
 
     const maxRetries = 20;
     for (let i = 0; i < maxRetries; i++) {
         const res = await fetch(endpoint, {
-            headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` }
+            headers: { Authorization: `Bearer ${vercelToken}` }
         });
         if (res.ok) {
             const data = await res.json();
