@@ -291,10 +291,8 @@ export default async function handler(request, response) {
 				try {
 					const html = buildStandaloneHtml(appRecord);
 					await createVercelProject(slug);
-					const deployment = await deployProject(slug, html);
-					if (deployment?.id) {
-						await waitForDeploymentReady(deployment.id);
-					}
+					await deployProject(slug, html);
+					liveUrl = `https://${slug}.vercel.app`;
 				} catch (deployErr) {
 					console.error('Vercel standalone deploy failed, falling back:', deployErr);
 					liveUrl = `https://${host}/app/${slug}`;
